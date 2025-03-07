@@ -30,8 +30,7 @@ function Home() {
     loadPokemons();
   }, []);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(error.target.value);
+  const handleSearch = async() => {
     if (!searchTerm.trim()) return;
 
     try {
@@ -56,7 +55,8 @@ function Home() {
               type="text"
               placeholder="Search Pokémon by name or id . . ."
               value={searchTerm}
-              onChange={handleSearch}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
