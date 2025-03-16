@@ -6,6 +6,8 @@ import Filters from '../components/Filter';
 import type { Pokemon } from '../types/pokemon';
 
 function Home() {
+  const [currentPage, setCurrentPage] = useState(0);
+  const limit = 16;
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [filteredPokemons, setFilteredPokemons] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ function Home() {
       try {
         setLoading(true);
         setError('');
-        const response = await getPokemonList(0, 16);
+        const response = await getPokemonList(currentPage * limit, limit);
         const pokemonDetails = await Promise.all(
           response.results.map((pokemon) => getPokemon(pokemon.name))
         );
@@ -29,9 +31,10 @@ function Home() {
         setLoading(false);
       }
     };
-
+  
     loadPokemons();
-  }, []);
+  }, [currentPage]);
+  
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -49,13 +52,12 @@ function Home() {
     }
   };
 
-  //Estilizar a div do Search
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-6">Search here!</h1>
-          <div>
+          <div className="flex flex-row justify-center items-center mb-8 mx-auto w-full max-w-5xl gap-4">
             <Filters pokemons={pokemons} onFilter={setFilteredPokemons} />
             <div className="w-full max-w-md relative">
               <input
@@ -85,14 +87,34 @@ function Home() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPokemons.map((pokemon) => (
-              <PokemonCard key={pokemon.id} pokemon={pokemon} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredPokemons.map((pokemon) => (
+                <PokemonCard key={pokemon.id} pokemon={pokemon} />
+              ))}
+            </div>
+          
+            <div className="flex justify-center mt-8 pb-8">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                disabled={currentPage === 0}
+                className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
+                >
+                Anterior
+              </button>
+              <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-4 py-2 mx-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                >
+                Próximo
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
+     
   );
 }
 
