@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Pokemon } from "../types/pokemon";
+import { getTypes } from "../services/api";
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -13,42 +14,35 @@ interface FiltersProps {
   onFilter: (filteredPokemons: Pokemon[]) => void;
 }
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
-
 export default function Filters({ pokemons, onFilter }: FiltersProps) {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [allTypes, setAllTypes] = useState<string[]>([]);
 
-  const allTypes = Array.from(
-    new Set(
-      pokemons.flatMap((pokemon) => pokemon.types.map((t) => t.type.name))
-    )
-  );
+  useEffect(() => {
+    const fetchTypes = async () => {
+      const typesData = await getTypes();
+      setAllTypes(typesData.results.map((t) => t.name));
+    };
+    fetchTypes();
+  }, []);
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value as string[];
-    setSelectedFilters(value);
-    applyFilters(value);
+    setSelectedFilters(event.target.value as string[]);
   };
 
-  const applyFilters = (filters: string[]) => {
-    if (filters.length === 0) {
-      onFilter(pokemons);
-    } else {
-      const filtered = pokemons.filter((pokemon) =>
-        pokemon.types.some((t) => filters.includes(t.type.name))
-      );
-      onFilter(filtered);
-    }
-  };
+  useEffect(() => {
+    const applyFilters = () => {
+      if (selectedFilters.length === 0) {
+        onFilter(pokemons);
+      } else {
+        const filtered = pokemons.filter((pokemon) =>
+          pokemon.types.some((t) => selectedFilters.includes(t.type.name))
+        );
+        onFilter(filtered);
+      }
+    };
+    applyFilters();
+  }, [selectedFilters, pokemons]);
 
   return (
     <div>
@@ -62,7 +56,6 @@ export default function Filters({ pokemons, onFilter }: FiltersProps) {
           onChange={handleChange}
           input={<OutlinedInput label="Filter" />}
           renderValue={(selected) => selected.join(', ')}
-          MenuProps={MenuProps}
         >
           {allTypes.map((type) => (
             <MenuItem key={type} value={type}>

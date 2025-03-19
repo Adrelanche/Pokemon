@@ -24,10 +24,19 @@ export interface Pokemon {
 
 export interface PokemonListResponse {
   count: number;
-  next: string | null;
-  previous: string | null;
+  next?: string | null;
+  previous?: string | null;
   results: {
     name: string;
     url: string;
   }[];
+}
+
+export interface Type {
+  name: string;
+  url: string;
+}
+
+export interface TypeListResponse {
+  results: Type[];
 }
