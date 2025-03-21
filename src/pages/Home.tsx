@@ -14,14 +14,13 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-
+  const [pokemonsLenght, setPokemonsLength] = useState<number>(0);
 
   useEffect(() => {
     const loadPokemons = async () => {
       try {
         setLoading(true);
         setError('');
-  
         if (selectedTypes.length > 0) {
           const pokemonByType = await Promise.all(
             selectedTypes.map(async (type) => {
@@ -34,14 +33,17 @@ function Home() {
           const offset = currentPage * limit;
           const paginatedPokemonNames = uniquePokemonNames.slice(offset, offset + limit);
           const pokemonDetails = await Promise.all(paginatedPokemonNames.map((name) => getPokemon(name)));
-  
+
+          setPokemonsLength(uniquePokemonNames.length);
           setFilteredPokemons(pokemonDetails);
         } else {
           const response = await getPokemonList(currentPage * limit, limit);
+          const response2 = await getPokemonList();
           const pokemonDetails = await Promise.all(
             response.results.map((pokemon) => getPokemon(pokemon.name))
           );
-  
+
+          setPokemonsLength(response2.count);
           setPokemons(pokemonDetails);
           setFilteredPokemons(pokemonDetails);
         }
@@ -51,11 +53,9 @@ function Home() {
         setLoading(false);
       }
     };
-  
+
     loadPokemons();
   }, [currentPage, selectedTypes]);
-  
-  
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -65,6 +65,7 @@ function Home() {
       setError('');
       const pokemon = await getPokemon(searchTerm.toLowerCase());
       setFilteredPokemons([pokemon]);
+      setPokemonsLength(1);
     } catch (err) {
       setError('Pokémon not found. Please try another name.');
     } finally {
@@ -113,24 +114,27 @@ function Home() {
               ))}
             </div>
 
-            { (
-              <div className="flex justify-center mt-8 pb-8">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-                  disabled={currentPage === 0}
-                  className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
-                >
-                  Anterior
-                </button>
-                <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
-                <button
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                  className="px-4 py-2 mx-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-                >
-                  Próximo
-                </button>
-              </div>
-            )}
+            <div className="flex justify-center mt-8 pb-8">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                disabled={currentPage === 0}
+                className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
+              >
+                Anterior
+              </button>
+              <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage >= Math.ceil(pokemonsLenght / limit) - 1}
+                className={`px-4 py-2 mx-2 text-white rounded ${
+                  currentPage >= Math.ceil(pokemonsLenght / limit) - 1
+                    ? 'bg-gray-400'
+                    : 'bg-blue-500 hover:bg-blue-700'
+                }`}
+              >
+                Próximo
+              </button>
+            </div>
           </>
         )}
       </div>
