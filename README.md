@@ -19,7 +19,9 @@ Material UI
 Clone o repositório e instale as dependências:
 
 git clone https://github.com/Adrelanche/Pokemon.git
+
 cd Team_Rocket_API
+
 npm install # ou yarn install
 
 ▶️ Uso
@@ -28,7 +30,7 @@ Para rodar o projeto em modo de desenvolvimento:
 
 npm run dev # ou yarn dev
 
-Acesse em: http://localhost:5173 (ou outra porta, dependendo da configuração).
+Acesse em: http://localhost:5173  (ou outra porta, dependendo da configuração).
 
 🛠️ Construção para Produção
 
