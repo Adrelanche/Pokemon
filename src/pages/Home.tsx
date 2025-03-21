@@ -13,18 +13,38 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+
 
   useEffect(() => {
     const loadPokemons = async () => {
       try {
         setLoading(true);
         setError('');
-        const response = await getPokemonList(currentPage * limit, limit);
-        const pokemonDetails = await Promise.all(
-          response.results.map((pokemon) => getPokemon(pokemon.name))
-        );
-        setPokemons(pokemonDetails);
-        setFilteredPokemons(pokemonDetails);
+  
+        if (selectedTypes.length > 0) {
+          const pokemonByType = await Promise.all(
+            selectedTypes.map(async (type) => {
+              const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+              const data = await response.json();
+              return data.pokemon.map((entry: any) => entry.pokemon.name);
+            })
+          );
+          const uniquePokemonNames = [...new Set(pokemonByType.flat())];
+          const offset = currentPage * limit;
+          const paginatedPokemonNames = uniquePokemonNames.slice(offset, offset + limit);
+          const pokemonDetails = await Promise.all(paginatedPokemonNames.map((name) => getPokemon(name)));
+  
+          setFilteredPokemons(pokemonDetails);
+        } else {
+          const response = await getPokemonList(currentPage * limit, limit);
+          const pokemonDetails = await Promise.all(
+            response.results.map((pokemon) => getPokemon(pokemon.name))
+          );
+  
+          setPokemons(pokemonDetails);
+          setFilteredPokemons(pokemonDetails);
+        }
       } catch (err) {
         setError('Failed to load Pokémon. Please try again later.');
       } finally {
@@ -33,7 +53,8 @@ function Home() {
     };
   
     loadPokemons();
-  }, [currentPage]);
+  }, [currentPage, selectedTypes]);
+  
   
 
   const handleSearch = async () => {
@@ -43,7 +64,6 @@ function Home() {
       setLoading(true);
       setError('');
       const pokemon = await getPokemon(searchTerm.toLowerCase());
-      setPokemons([pokemon]);
       setFilteredPokemons([pokemon]);
     } catch (err) {
       setError('Pokémon not found. Please try another name.');
@@ -58,7 +78,8 @@ function Home() {
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-6">Search here!</h1>
           <div className="flex flex-row justify-center items-center mb-8 mx-auto w-full max-w-5xl gap-4">
-            <Filters pokemons={pokemons} onFilter={setFilteredPokemons} />
+            <Filters onFilter={setSelectedTypes} />
+
             <div className="w-full max-w-md relative">
               <input
                 type="text"
@@ -67,18 +88,16 @@ function Home() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              />
               <button
                 onClick={handleSearch}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
+              >
                 <Search size={30} />
               </button>
             </div>
           </div>
         </div>
-
-
 
         {error && <div className="text-red-500 text-center mb-4">{error}</div>}
 
@@ -93,28 +112,29 @@ function Home() {
                 <PokemonCard key={pokemon.id} pokemon={pokemon} />
               ))}
             </div>
-          
-            <div className="flex justify-center mt-8 pb-8">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-                disabled={currentPage === 0}
-                className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
+
+            { (
+              <div className="flex justify-center mt-8 pb-8">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                  disabled={currentPage === 0}
+                  className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
                 >
-                Anterior
-              </button>
-              <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
-              <button
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                className="px-4 py-2 mx-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                  Anterior
+                </button>
+                <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
+                <button
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  className="px-4 py-2 mx-2 bg-blue-500 text-white rounded hover:bg-blue-700"
                 >
-                Próximo
-              </button>
-            </div>
+                  Próximo
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
-     
   );
 }
 
