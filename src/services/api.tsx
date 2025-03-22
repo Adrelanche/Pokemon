@@ -23,3 +23,13 @@ export const getTypes = async (): Promise<TypeListResponse> => {
   const response = await api.get<TypeListResponse>('/type');
   return response.data;
 };
+
+export const apiLogin = async (credentials: { username: string, password: string }) => {
+  try {
+    const response = await backend.post('/api/login/', credentials);
+    return response;
+  } catch (error) {
+    console.error("Erro ao fazer login:", error);
+    throw error;
+  }
+};
