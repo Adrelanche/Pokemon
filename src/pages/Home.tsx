@@ -4,6 +4,8 @@ import { getPokemon, getPokemonList } from '../services/api';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import type { Pokemon } from '../types/pokemon';
+import Pagination from '@mui/material/Pagination';
+import Stack from '@mui/material/Stack';
 
 function Home() {
   const [currentPage, setCurrentPage] = useState(0);
@@ -115,25 +117,18 @@ function Home() {
             </div>
 
             <div className="flex justify-center mt-8 pb-8">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-                disabled={currentPage === 0}
-                className={`px-4 py-2 mx-2 text-white rounded ${currentPage === 0 ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'}`}
-              >
-                Anterior
-              </button>
-              <h1 className="text-2xl font-bold capitalize mb-2">{currentPage + 1}</h1>
-              <button
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                disabled={currentPage >= Math.ceil(pokemonsLenght / limit) - 1}
-                className={`px-4 py-2 mx-2 text-white rounded ${
-                  currentPage >= Math.ceil(pokemonsLenght / limit) - 1
-                    ? 'bg-gray-400'
-                    : 'bg-blue-500 hover:bg-blue-700'
-                }`}
-              >
-                Próximo
-              </button>
+              <Stack spacing={2}>
+                <Pagination
+                  defaultPage={1}
+                  color='primary'
+                  count={Math.ceil(pokemonsLenght / limit)}
+                  page={currentPage + 1}
+                  onChange={(event, page) => setCurrentPage(page - 1)}
+                  showFirstButton
+                  showLastButton
+                  size='large'
+                />
+              </Stack>
             </div>
           </>
         )}
