@@ -36,7 +36,7 @@ export default function Filters({ onFilter }: FiltersProps) {
   return (
     <div>
       <FormControl sx={{ m: 1, width: 150 }}>
-        <InputLabel id="demo-multiple-checkbox-label">Filter</InputLabel>
+        <InputLabel id="demo-multiple-checkbox-label">Type</InputLabel>
         <Select
           labelId="demo-multiple-checkbox-label"
           id="demo-multiple-checkbox"

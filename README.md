@@ -5,7 +5,7 @@ Um projeto desenvolvido para portfólio e como uma homenagem de fã para fã. Es
 ## 🚀 Tecnologias
 
 - React.js
-- TypeScript (se aplicável)
+- TypeScript
 - Vite/Create React App
 - Styled Components/Tailwind
 - Material UI
@@ -47,4 +47,3 @@ Isso gerará os arquivos otimizados na pasta `dist` ou `build`.
 3. Faça as alterações e commit (`git commit -m 'Adiciona nova feature'`).
 4. Envie para o repositório (`git push origin feature/nova-feature`).
 5. Abra um Pull Request.
-
