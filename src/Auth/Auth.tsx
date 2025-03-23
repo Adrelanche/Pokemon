@@ -10,7 +10,6 @@ const STORAGE_KEYS = {
   
   export const isLoggedIn = () => {
     const token = sessionStorage.getItem(STORAGE_KEYS.TOKEN);
-    console.log("Token no sessionStorage:", token);
     if (!token) {
       return false;
     }

@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Heart, HeartOff } from 'lucide-react';
 import type { Pokemon } from '../types/pokemon';
+import { apiSetFavorites } from '../services/api';
+import { isLoggedIn } from '../Auth/Auth';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
@@ -27,8 +30,28 @@ const typeColors: Record<string, string> = {
 };
 
 export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon }) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const toggleFavorite = async () => {
+    try {
+      await apiSetFavorites(pokemon.name, pokemon.id);
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error('Erro ao favoritar Pokémon:', error);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow relative">
+      {isLoggedIn() && 
+      <button
+        onClick={toggleFavorite}
+        className="absolute top-2 right-2 text-red-500 hover:text-red-700 transition"
+      >
+        {isFavorite ? <Heart fill="red" size={24} /> : <HeartOff size={24} />}
+      </button>
+      }
+
       <div className="relative">
         <img
           src={pokemon.sprites.other['official-artwork'].front_default}

@@ -18,7 +18,6 @@ const Login: React.FC = () => {
       const response = await apiLogin({ username, password });
 
       if (response.status === 200) {
-        console.log("Token recebido:", response.data.access);
         sessionStorage.setItem("token", response.data.access);
         navigate("/");
       } else {
