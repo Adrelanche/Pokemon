@@ -32,14 +32,6 @@ npm run dev # ou yarn dev
 
 Acesse em: `http://localhost:5173` (ou outra porta, dependendo da configuração).
 
-## 🛠️ Construção para Produção
-
-````sh
-npm run build # ou yarn build
-````
-
-Isso gerará os arquivos otimizados na pasta `dist` ou `build`.
-
 ## 🤝 Contribuição
 
 1. Faça um fork do projeto.

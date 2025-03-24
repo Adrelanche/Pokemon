@@ -27,8 +27,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post('http://localhost:8000/api/register/', formData);
-      console.log(response.data);
-      navigate('/');
+      navigate('/login');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error during registration');
       console.error(err);

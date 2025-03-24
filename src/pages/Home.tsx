@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { getPokemon, getPokemonList } from '../services/api';
+import { getPokemon, getPokemonList, apiGetFavorites } from '../services/api';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import type { Pokemon } from '../types/pokemon';
@@ -17,6 +17,7 @@ function Home() {
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [pokemonsLenght, setPokemonsLength] = useState<number>(0);
+  const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -58,6 +59,21 @@ function Home() {
 
     loadPokemons();
   }, [currentPage, selectedTypes, searchTerm]);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const favorites = await apiGetFavorites();
+        setFavoritePokemons(Array.isArray(favorites) ? favorites : []);
+      } catch (error) {
+        console.error('Erro ao buscar favoritos:', error);
+        setFavoritePokemons([]);
+      }
+    };
+  
+    fetchFavorites();
+  }, []);
+  
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -121,7 +137,12 @@ function Home() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredPokemons.map((pokemon) => (
-                <PokemonCard key={pokemon.id} pokemon={pokemon} />
+                 <PokemonCard
+                 key={pokemon.id}
+                 pokemon={pokemon}
+                 favoritePokemons={favoritePokemons}
+                 setFavoritePokemons={setFavoritePokemons}
+               />
               ))}
             </div>
 

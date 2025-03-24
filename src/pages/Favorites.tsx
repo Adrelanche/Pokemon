@@ -1,79 +1,113 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { apiGetFavorites } from '../services/api'; // Supondo que apiGetFavorites já tenha sido definida.
+import { apiGetFavorites, getPokemon } from '../services/api';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
-import { Pokemon } from '../types/pokemon'; // Supondo que você tenha um tipo 'Pokemon'
+import { Pokemon } from '../types/pokemon';
 
 function Favorites() {
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 16;
-  const [filteredPokemons, setFilteredPokemons] = useState<Pokemon[]>([]); // Tipando o estado corretamente
+  const [filteredPokemons, setFilteredPokemons] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [pokemonsLength, setPokemonsLength] = useState(0);
+  const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
 
   useEffect(() => {
     const loadPokemons = async () => {
       try {
         setLoading(true);
         setError('');
-
-        const favoritePokemons = await apiGetFavorites(); // Chama a função para buscar os favoritos
+  
+        const favoritePokemons = await apiGetFavorites();
         if (favoritePokemons.error) {
           setError(favoritePokemons.error);
           return;
         }
-
+  
+        const pokemonPromises = favoritePokemons.map((p: { name: string; id: number }) => getPokemon(p.name));
+        const allPokemons = await Promise.all(pokemonPromises);
+  
+        let filtered = allPokemons;
+        if (selectedTypes.length > 0) {
+          filtered = allPokemons.filter((pokemon) =>
+            pokemon.types.some((type: { type: { name: string } }) =>
+              selectedTypes.includes(type.type.name)
+            )
+          );
+        }
+  
         const offset = currentPage * limit;
-        const paginatedPokemons = favoritePokemons.slice(offset, offset + limit);
-
-        setPokemonsLength(favoritePokemons.length);
-        setFilteredPokemons(paginatedPokemons); // Aqui a atribuição já será de um array de Pokémon
+        const paginatedPokemons = filtered.slice(offset, offset + limit);
+  
+        setPokemonsLength(filtered.length);
+        setFilteredPokemons(paginatedPokemons);
       } catch (err) {
-        setError('Failed to load Pokémon favorites. Please try again later.');
+        setError('Failed to load Pokémon favorites.');
       } finally {
         setLoading(false);
       }
     };
-
+  
     loadPokemons();
-  }, [currentPage]);
+  }, [currentPage, selectedTypes]);
+  
+  
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
-
+  
     try {
       setLoading(true);
       setError('');
-
-      const favoritePokemons = await apiGetFavorites();
-      if (favoritePokemons.error) {
-        setError(favoritePokemons.error);
+  
+      const favoritePokemons: { name: string; id: number }[] = await apiGetFavorites();
+      if (!favoritePokemons || favoritePokemons.length === 0) {
+        setError('No favorite Pokémon found.');
         return;
       }
-
-      const foundPokemon = favoritePokemons.find((p: Pokemon) => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.id.toString().includes(searchTerm)
+  
+      const pokemonNames: string[] = favoritePokemons.map((p) => p.name);
+  
+      const filteredNames = pokemonNames.filter((name: string) =>
+        name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-
-      if (foundPokemon) {
-        setFilteredPokemons([foundPokemon]);  // Correção aqui: sempre um array de Pokémon
-        setPokemonsLength(1);
-      } else {
+  
+      if (filteredNames.length === 0) {
         setError('Pokémon not found in favorites. Please try another name.');
+        setFilteredPokemons([]);
+        return;
       }
+  
+      const pokemonPromises = filteredNames.map((name: string) => getPokemon(name));
+      const pokemonData = await Promise.all(pokemonPromises);
+  
+      setFilteredPokemons(pokemonData);
+      setPokemonsLength(pokemonData.length);
     } catch (err) {
       setError('Failed to search for Pokémon favorites.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const favorites = await apiGetFavorites();
+        setFavoritePokemons(favorites);
+      } catch (error) {
+        console.error('Erro ao buscar favoritos:', error);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -112,12 +146,15 @@ function Favorites() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredPokemons.map((pokemon) => {
-  console.log(pokemon); // Verifique se o pokemon contém um id
-  return (
-    <PokemonCard key={pokemon.id} pokemon={pokemon} />
-  );
-})}
-
+              return (
+                <PokemonCard
+                key={pokemon.id}
+                pokemon={pokemon}
+                favoritePokemons={favoritePokemons}
+                setFavoritePokemons={setFavoritePokemons}
+              />
+              );
+            })}
             </div>
 
             <div className="flex justify-center mt-8 pb-8">

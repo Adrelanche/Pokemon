@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart, HeartOff } from 'lucide-react';
 import type { Pokemon } from '../types/pokemon';
 import { apiSetFavorites } from '../services/api';
@@ -6,6 +6,8 @@ import { isLoggedIn } from '../Auth/Auth';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
+  favoritePokemons: { name: string; id: number }[];
+  setFavoritePokemons: React.Dispatch<React.SetStateAction<{ name: string; id: number }[]>>;
 }
 
 const typeColors: Record<string, string> = {
@@ -29,12 +31,21 @@ const typeColors: Record<string, string> = {
   fairy: 'bg-pink-300',
 };
 
-export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon }) => {
+export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokemons, setFavoritePokemons }) => {
   const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(favoritePokemons.some(fav => fav.id === pokemon.id));
+  }, [favoritePokemons, pokemon.id]);
 
   const toggleFavorite = async () => {
     try {
       await apiSetFavorites(pokemon.name, pokemon.id);
+      if (isFavorite) {
+        setFavoritePokemons(favoritePokemons.filter(fav => fav.id !== pokemon.id));
+      } else {
+        setFavoritePokemons([...favoritePokemons, { name: pokemon.name, id: pokemon.id }]);
+      }
       setIsFavorite(!isFavorite);
     } catch (error) {
       console.error('Erro ao favoritar Pokémon:', error);
@@ -54,7 +65,7 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon }) => {
 
       <div className="relative">
         <img
-          src={pokemon.sprites.other['official-artwork'].front_default}
+          src={pokemon.sprites?.other?.['official-artwork']?.front_default || 'default_image_url'}
           alt={pokemon.name}
           className="w-full h-48 object-contain"
         />
@@ -62,31 +73,38 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon }) => {
       <div className="mt-4">
         <h2 className="text-2xl font-bold capitalize mb-2">{pokemon.name}</h2>
         <div className="flex gap-2 mb-4">
-          {pokemon.types.map((type) => (
-            <span
-              key={type.type.name}
-              className={`${
-                typeColors[type.type.name]
-              } text-white px-3 py-1 rounded-full text-sm capitalize`}
-            >
-              {type.type.name}
-            </span>
-          ))}
+          {Array.isArray(pokemon.types) ? (
+            pokemon.types.map((type) => (
+              <span
+                key={type.type.name}
+                className={`${typeColors[type.type.name] || 'bg-gray-400'} text-white px-3 py-1 rounded-full text-sm capitalize`}
+              >
+                {type.type.name}
+              </span>
+            ))
+          ) : (
+            <div>No types available</div>
+          )}
         </div>
+
         <div className="grid grid-cols-2 gap-2">
-          {pokemon.stats.map((stat) => (
-            <div key={stat.stat.name}>
-              <p className="text-sm text-gray-600 capitalize">
-                {stat.stat.name.replace('-', ' ')}: {stat.base_stat}
-              </p>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full"
-                  style={{ width: `${(stat.base_stat / 255) * 100}%` }}
-                ></div>
+          {Array.isArray(pokemon.stats) ? (
+            pokemon.stats.map((stat) => (
+              <div key={stat.stat.name}>
+                <p className="text-sm text-gray-600 capitalize">
+                  {stat.stat.name.replace('-', ' ')}: {stat.base_stat}
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${(stat.base_stat / 255) * 100}%` }}
+                  ></div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div>No stats available</div>
+          )}
         </div>
       </div>
     </div>

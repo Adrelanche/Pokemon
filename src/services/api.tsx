@@ -38,18 +38,12 @@ export const backend = axios.create({
 });
 
 export const apiSetFavorites = async (pokemonName: string, pokemonId: number) => {
-  // Verifica se o usuário está autenticado antes de fazer a requisição
-  if (!isLoggedIn()) {
-    console.warn("Usuário não está logado. Redirecionando para login...");
-    return { error: "Usuário não autenticado." };
-  }
-
   try {
-    const token = getToken(); // Obtém o token válido do sessionStorage
+    const token = getToken();
     const response = await backend.patch(
       '/api/favorite/',
       { pokemon_name: pokemonName, pokemon_id: pokemonId },
-      { headers: { Authorization: `Bearer ${token}` } } // Passa o token no cabeçalho
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     return response;
@@ -60,26 +54,16 @@ export const apiSetFavorites = async (pokemonName: string, pokemonId: number) =>
 };
 
 export const apiGetFavorites = async () => {
-  if (!isLoggedIn()) {
-    console.warn("Usuário não está logado. Redirecionando para login...");
-    return { error: "Usuário não autenticado." };
-  }
   try {
-    const token = getToken(); // Obtém o token válido do sessionStorage
-    const response = await backend.get(
-      '/api/favorite/', 
-      { headers: { Authorization: `Bearer ${token}` } } // Passa o token no cabeçalho
-    );
+    const token = getToken();
+    const response = await backend.get('/api/favorite/', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    // Verifica se a resposta contém favoritos
-    if (response.data.favorite_pokemons) {
-      return response.data.favorite_pokemons; // Retorna apenas a lista de Pokémon favoritos
-    } else {
-      return { error: "Nenhum Pokémon favorito encontrado." };
-    }
+    return response.data.favorite_pokemons || [];
   } catch (error) {
     console.error("Erro ao buscar favoritos:", error);
-    return { error: "Erro ao buscar favoritos." }; // Retorna uma mensagem de erro caso a requisição falhe
+    return { error: "Erro ao buscar favoritos. Tente novamente mais tarde." };
   }
 };
 
