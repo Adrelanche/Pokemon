@@ -55,7 +55,7 @@ function Favorites() {
     };
   
     loadPokemons();
-  }, [currentPage, selectedTypes]);
+  }, [currentPage, selectedTypes, favoritePokemons]);
   
   
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { Pokemon, PokemonListResponse, TypeListResponse } from '../types/pokemon';
-import { getToken, isLoggedIn } from '../Auth/Auth';
+import { getToken } from '../Auth/Auth';
 
 const api = axios.create({
   baseURL: 'https://pokeapi.co/api/v2',
