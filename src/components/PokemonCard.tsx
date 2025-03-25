@@ -3,11 +3,13 @@ import { Heart, HeartOff } from 'lucide-react';
 import type { Pokemon } from '../types/pokemon';
 import { apiSetFavorites } from '../services/api';
 import { isLoggedIn } from '../Auth/Auth';
+import { useDrag, useDrop } from 'react-dnd';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
   favoritePokemons: { name: string; id: number }[];
   setFavoritePokemons: React.Dispatch<React.SetStateAction<{ name: string; id: number }[]>>;
+  moveCard?: (draggedId: number, hoveredId: number) => void;
 }
 
 const typeColors: Record<string, string> = {
@@ -31,7 +33,7 @@ const typeColors: Record<string, string> = {
   fairy: 'bg-pink-300',
 };
 
-export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokemons, setFavoritePokemons }) => {
+export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokemons, setFavoritePokemons, moveCard }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -52,8 +54,31 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokem
     }
   };
 
+  const [{ isDragging }, drag] = useDrag({
+    type: 'CARD',
+    item: { id: pokemon.id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'CARD',
+    hover: (item: { id: number }) => {
+      if (moveCard) {
+        moveCard(item.id, pokemon.id);
+      }
+    },
+  });
+
+  const opacity = isDragging ? 0.5 : 1;
+
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow relative">
+    <div
+    ref={(node) => drag(drop(node))}
+    className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow relative"
+    style={{ opacity }}
+  >
       {isLoggedIn() && 
       <button
         onClick={toggleFavorite}

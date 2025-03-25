@@ -6,19 +6,23 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Favorites from './pages/Favorites';
 import ProtectedRoute from "./Auth/ProtectedRoute";
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 function App() {
 
   return(
     <div>
-      <Navbar/>
-      <Routes>
-        <Route path='/' element={<Home/>}/>
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/favorites" element={<ProtectedRoute Component={Favorites} path="/favorites" />} />
-      </Routes>
-      <Footer/>
+      <DndProvider backend={HTML5Backend}>
+        <Navbar/>
+        <Routes>
+          <Route path='/' element={<Home/>}/>
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/favorites" element={<ProtectedRoute Component={Favorites} path="/favorites" />} />
+        </Routes>
+        <Footer/>
+      </DndProvider>
     </div>
   )
 }

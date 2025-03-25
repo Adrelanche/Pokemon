@@ -67,3 +67,15 @@ export const apiGetFavorites = async () => {
   }
 };
 
+export const apiPatchFavoritesOrder = async (pokemonOrder: number, pokemonID: number) => {
+  try {
+    const token = getToken();
+    const response = await backend.patch('/api/favorite-order/',
+    {order: pokemonOrder, pokemon_id: pokemonID},
+    { headers: { Authorization: `Bearer ${token}` } })
+    return response
+  } catch(error){
+    console.error("Erro ao mudar a ordem:", error);
+  }
+}
+

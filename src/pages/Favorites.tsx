@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { apiGetFavorites, getPokemon } from '../services/api';
+import { apiGetFavorites, getPokemon, apiPatchFavoritesOrder } from '../services/api';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import Pagination from '@mui/material/Pagination';
@@ -113,6 +113,26 @@ function Favorites() {
     fetchFavorites();
   }, []);
 
+  const moveCard = (draggedId: number, hoveredId: number) => {
+    const draggedIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === draggedId);
+    const hoveredIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === hoveredId);
+
+    const updatedFavorites = [...filteredPokemons];
+    const draggedCard = updatedFavorites.splice(draggedIndex, 1)[0];
+    updatedFavorites.splice(hoveredIndex, 0, draggedCard);
+
+    setFilteredPokemons(updatedFavorites);
+    updatedFavorites.forEach((pokemon, index) => {
+      apiPatchFavoritesOrder(index + 1, pokemon.id)
+        .then((response) => {
+          console.log(`Pokémon ${pokemon.name} com ID ${pokemon.id} movido para a ordem ${index + 1}`);
+        })
+        .catch((error) => {
+          console.error('Erro ao atualizar a ordem no backend:', error);
+        });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -157,6 +177,7 @@ function Favorites() {
                     pokemon={pokemon}
                     favoritePokemons={favoritePokemons}
                     setFavoritePokemons={setFavoritePokemons}
+                    moveCard={moveCard}
                   />
                 ))}
               </div>: 
