@@ -17,6 +17,7 @@ function Favorites() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [pokemonsLength, setPokemonsLength] = useState(0);
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
+  const [message, setMessage] = useState<any>("");
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -32,7 +33,10 @@ function Favorites() {
   
         const pokemonPromises = favoritePokemons.map((p: { name: string; id: number }) => getPokemon(p.name));
         const allPokemons = await Promise.all(pokemonPromises);
-  
+        
+        if(pokemonPromises.length <= 0)
+          setMessage("Não há Pokémons favoritos!")
+
         let filtered = allPokemons;
         if (selectedTypes.length > 0) {
           filtered = allPokemons.filter((pokemon) =>
@@ -144,18 +148,24 @@ function Favorites() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPokemons.map((pokemon) => {
-              return (
-                <PokemonCard
-                key={pokemon.id}
-                pokemon={pokemon}
-                favoritePokemons={favoritePokemons}
-                setFavoritePokemons={setFavoritePokemons}
-              />
-              );
-            })}
-            </div>
+            
+            {!message ?     
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredPokemons.map((pokemon) => (    
+                  <PokemonCard
+                    key={pokemon.id}
+                    pokemon={pokemon}
+                    favoritePokemons={favoritePokemons}
+                    setFavoritePokemons={setFavoritePokemons}
+                  />
+                ))}
+              </div>: 
+              (
+                <div className="flex justify-center align-center">
+                  <h1>{message}</h1>  
+                </div>
+              )}
+            
 
             <div className="flex justify-center mt-8 pb-8">
               <Stack spacing={2}>

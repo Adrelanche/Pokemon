@@ -31,4 +31,3 @@ const STORAGE_KEYS = {
   export const storeToken = (token: string) => {
     sessionStorage.setItem(STORAGE_KEYS.TOKEN, token);
   };
-  

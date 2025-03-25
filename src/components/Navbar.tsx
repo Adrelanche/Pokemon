@@ -1,18 +1,37 @@
 import React from 'react';
-import { Rocket } from 'lucide-react';
+import { Rocket, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isLoggedIn, logout } from '../Auth/Auth';
+import Button from '@mui/material/Button';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleFav = () => {
+    navigate("/favorites")
+    handleClose();
+  }
 
   const handleLogout = () => {
     logout(navigate);
+    handleClose();
   };
 
   return (
     <nav className="bg-blue-900">
-      <div className="flex items-center justify-center container mx-auto px-4 space-x-4">
+      <div className="flex items-center justify-between container mx-auto px-4 space-x-4">
         <div className="flex items-center justify-center h-16">
           <div
             className="flex items-center cursor-pointer group hover:scale-105 transition-transform"
@@ -27,36 +46,47 @@ const Navbar: React.FC = () => {
             </span>
           </div>
         </div>
-        {!isLoggedIn() && (
-          <div className="flex justify-center mt-4">
+        {!isLoggedIn() ? (
+          <div className="flex justify-center mt-4 gap-4">
             <button
-              className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              className=" text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
               onClick={() => navigate("/login")}
             >
-              Login
+              Entrar
             </button>
             <button
-              className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              className=" text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
               onClick={() => navigate("/register")}
             >
-              Register
+              Registrar
             </button>
           </div>
-        )}
-        {isLoggedIn() && (
+        ): 
+        (
           <div className="flex justify-center mt-4">
-            <button
-              className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-              onClick={handleLogout}
+             <Button
+              id="basic-button"
+              aria-controls="basic-menu"
+              aria-haspopup="true"
+              aria-expanded={open ? 'true' : undefined}
+              onClick={handleClick}
+              className="hover:bg-gray-100 hover:bg-opacity-10 !text-white"
+
             >
-              Logout
-            </button>
-            <button
-              className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-              onClick={() => navigate("/favorites")}
+              <User />
+            </Button>
+            <Menu
+              id="basic-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
             >
-              Favoritos
-            </button>
+              <MenuItem onClick={handleFav}>Favoritos</MenuItem>
+              <MenuItem onClick={handleLogout}>Sair</MenuItem>
+            </Menu>
           </div>
         )}
       </div>
