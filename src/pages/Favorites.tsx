@@ -18,6 +18,7 @@ function Favorites() {
   const [pokemonsLength, setPokemonsLength] = useState(0);
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
   const [message, setMessage] = useState<any>("");
+  const [dropped, setDropped] = useState<boolean>(false);
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -59,7 +60,7 @@ function Favorites() {
     };
   
     loadPokemons();
-  }, [currentPage, selectedTypes, favoritePokemons]);
+  }, [currentPage, selectedTypes, favoritePokemons, dropped]);
   
   
 
@@ -114,23 +115,15 @@ function Favorites() {
   }, []);
 
   const moveCard = (draggedId: number, hoveredId: number) => {
-    const draggedIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === draggedId);
     const hoveredIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === hoveredId);
-
-    const updatedFavorites = [...filteredPokemons];
-    const draggedCard = updatedFavorites.splice(draggedIndex, 1)[0];
-    updatedFavorites.splice(hoveredIndex, 0, draggedCard);
-
-    setFilteredPokemons(updatedFavorites);
-    updatedFavorites.forEach((pokemon, index) => {
-      apiPatchFavoritesOrder(index + 1, pokemon.id)
-        .then((response) => {
-          console.log(`Pokémon ${pokemon.name} com ID ${pokemon.id} movido para a ordem ${index + 1}`);
-        })
-        .catch((error) => {
-          console.error('Erro ao atualizar a ordem no backend:', error);
-        });
-    });
+    apiPatchFavoritesOrder(hoveredIndex , draggedId)
+      .then((response) => {
+        console.log(`Pokémon com ID ${draggedId} movido para a ordem ${hoveredIndex}`);
+        setDropped(true);
+      })
+      .catch((error) => {
+        console.error('Erro ao atualizar a ordem no backend:', error);
+      });
   };
 
   return (

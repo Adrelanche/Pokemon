@@ -64,7 +64,7 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokem
 
   const [, drop] = useDrop({
     accept: 'CARD',
-    hover: (item: { id: number }) => {
+    drop: (item: { id: number }) => {
       if (moveCard) {
         moveCard(item.id, pokemon.id);
       }
