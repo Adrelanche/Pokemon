@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiLogin } from "../services/api";
+import services from "../services/Services";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiLogin({ username, password });
+      const response = await services.apiLogin({ username, password });
 
       if (response.status === 200) {
         sessionStorage.setItem("token", response.data.access);

@@ -6,18 +6,30 @@ const api = axios.create({
   baseURL: 'https://pokeapi.co/api/v2',
 });
 
-
-
-export const getPokemonList = async (offset = 0, limit = 30): Promise<PokemonListResponse> => {
-  const response = await api.get<PokemonListResponse>(`/pokemon?offset=${offset}&limit=${limit}`);
-  return response.data;
-};
-
 export const getPokemon = async (nameOrId: string | number): Promise<Pokemon> => {
-  const response = await api.get<Pokemon>(`/pokemon/${nameOrId}`);
-  return response.data;
-};
+  const response = await api.get(`/pokemon/${nameOrId}`);
+  const data = response.data;
 
+  return {
+    id: data.id,
+    name: data.name,
+    sprites: {
+      front_default: data.sprites.front_default,
+      other: {
+        'official-artwork': {
+          front_default: data.sprites.other['official-artwork'].front_default
+        }
+      }
+    },
+    types: data.types.map((t: any) => ({
+      type: { name: t.type.name }
+    })),
+    stats: data.stats.map((s: any) => ({
+      base_stat: s.base_stat,
+      stat: { name: s.stat.name }
+    }))
+  };
+};
 export const getTypes = async (): Promise<TypeListResponse> => {
   const response = await api.get<TypeListResponse>('/type');
   return response.data;

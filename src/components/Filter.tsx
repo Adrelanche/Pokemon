@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getTypes } from "../services/api";
+import  services  from "../services/Services";
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -18,7 +18,7 @@ export default function Filters({ onFilter }: FiltersProps) {
 
   useEffect(() => {
     const fetchTypes = async () => {
-      const typesData = await getTypes();
+      const typesData = await services.getTypes();
       setAllTypes(typesData.results.map((t) => t.name));
     };
     fetchTypes();

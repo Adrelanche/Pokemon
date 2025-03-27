@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Search } from 'lucide-react';
-import { getPokemon, getPokemonList, apiGetFavorites } from '../services/api';
+import services from '../services/Services';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import type { Pokemon } from '../types/pokemon';
@@ -16,76 +16,91 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [pokemonsLenght, setPokemonsLength] = useState<number>(0);
+  const [pokemonsLength, setPokemonsLength] = useState<number>(0);
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
+  const loadingRef = useRef(false);
+
+  const loadPokemons = async () => {
+    if (loadingRef.current) return;
+
+    loadingRef.current = true;
+    setLoading(true);
+    setError('');
+    
+    try {
+      let pokemonDetails: Pokemon[] = [];
+      let totalCount = 0;
+
+      if (selectedTypes.length > 0) {
+        const pokemonByType = await Promise.all(
+          selectedTypes.map(async (type) => {
+            const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+            const data = await response.json();
+            return data.pokemon.map((entry: any) => entry.pokemon.name);
+          })
+        );
+
+        const uniquePokemonNames = [...new Set(pokemonByType.flat())];
+        const offset = currentPage * limit;
+        const paginatedPokemonNames = uniquePokemonNames.slice(offset, offset + limit);
+        pokemonDetails = await Promise.all(paginatedPokemonNames.map((name) => services.getPokemon(name)));
+
+        totalCount = uniquePokemonNames.length;
+      } else {
+        const { pokemons, totalCount: total } = await services.getPokemonList(currentPage * limit, limit);
+        pokemonDetails = pokemons;
+        totalCount = total;
+      }
+
+      if (searchTerm.trim()) {
+        pokemonDetails = pokemonDetails.filter((pokemon) =>
+          pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      setPokemonsLength(totalCount);
+      setFilteredPokemons(pokemonDetails);
+    } catch (err) {
+      setError('Failed to load Pokémon. Please try again later.');
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    const loadPokemons = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        if (selectedTypes.length > 0) {
-          const pokemonByType = await Promise.all(
-            selectedTypes.map(async (type) => {
-              const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
-              const data = await response.json();
-              return data.pokemon.map((entry: any) => entry.pokemon.name);
-            })
-          );
-          const uniquePokemonNames = [...new Set(pokemonByType.flat())];
-          const offset = currentPage * limit;
-          const paginatedPokemonNames = uniquePokemonNames.slice(offset, offset + limit);
-          const pokemonDetails = await Promise.all(paginatedPokemonNames.map((name) => getPokemon(name)));
-
-          setPokemonsLength(uniquePokemonNames.length);
-          setFilteredPokemons(pokemonDetails);
-        } else {
-          const response = await getPokemonList(currentPage * limit, limit);
-          const response2 = await getPokemonList();
-          const pokemonDetails = await Promise.all(
-            response.results.map((pokemon) => getPokemon(pokemon.name))
-          );
-
-          setPokemonsLength(response2.count);
-          setPokemons(pokemonDetails);
-          setFilteredPokemons(pokemonDetails);
-        }
-      } catch (err) {
-        setError('Failed to load Pokémon. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadPokemons();
   }, [currentPage, selectedTypes, searchTerm]);
 
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const favorites = await apiGetFavorites();
+        const favorites = await services.apiGetFavorites();
         setFavoritePokemons(Array.isArray(favorites) ? favorites : []);
       } catch (error) {
         console.error('Erro ao buscar favoritos:', error);
         setFavoritePokemons([]);
       }
     };
-  
+
     fetchFavorites();
   }, []);
-  
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [selectedTypes]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       setFilteredPokemons(pokemons);
       setPokemonsLength(pokemons.length);
-      setCurrentPage(0)
+      setCurrentPage(0);
       return;
     }
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-      setError('');
-      const pokemon = await getPokemon(searchTerm.toLowerCase());
+      const pokemon = await services.getPokemon(searchTerm.toLowerCase());
       setFilteredPokemons([pokemon]);
       setPokemonsLength(1);
     } catch (err) {
@@ -94,11 +109,6 @@ function Home() {
       setLoading(false);
     }
   };
-  
-
-  useEffect(() =>{
-    setCurrentPage(0)
-  }, [selectedTypes])
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -137,12 +147,12 @@ function Home() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredPokemons.map((pokemon) => (
-                 <PokemonCard
-                 key={pokemon.id}
-                 pokemon={pokemon}
-                 favoritePokemons={favoritePokemons}
-                 setFavoritePokemons={setFavoritePokemons}
-               />
+                <PokemonCard
+                  key={pokemon.id}
+                  pokemon={pokemon}
+                  favoritePokemons={favoritePokemons}
+                  setFavoritePokemons={setFavoritePokemons}
+                />
               ))}
             </div>
 
@@ -151,7 +161,7 @@ function Home() {
                 <Pagination
                   defaultPage={1}
                   color='primary'
-                  count={Math.ceil(pokemonsLenght / limit)}
+                  count={Math.ceil(pokemonsLength / limit)}
                   page={currentPage + 1}
                   onChange={(event, page) => setCurrentPage(page - 1)}
                   showFirstButton

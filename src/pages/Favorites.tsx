@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { apiGetFavorites, getPokemon, apiPatchFavoritesOrder } from '../services/api';
+import services from '../services/Services';
 import { PokemonCard } from '../components/PokemonCard';
 import Filters from '../components/Filter';
 import Pagination from '@mui/material/Pagination';
@@ -17,8 +17,10 @@ function Favorites() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [pokemonsLength, setPokemonsLength] = useState(0);
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
-  const [message, setMessage] = useState<any>("");
+  const [message, setMessage] = useState<any>('');
   const [dropped, setDropped] = useState<boolean>(false);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [hoveredItemIndex, setHoveredItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -26,17 +28,16 @@ function Favorites() {
         setLoading(true);
         setError('');
   
-        const favoritePokemons = await apiGetFavorites();
+        const favoritePokemons = await services.apiGetFavorites();
         if (favoritePokemons.error) {
           setError(favoritePokemons.error);
           return;
         }
   
-        const pokemonPromises = favoritePokemons.map((p: { name: string; id: number }) => getPokemon(p.name));
+        const pokemonPromises = favoritePokemons.map((p: { name: string; id: number }) => services.getPokemon(p.name));
         const allPokemons = await Promise.all(pokemonPromises);
         
-        if(pokemonPromises.length <= 0)
-          setMessage("Não há Pokémons favoritos!")
+        if (pokemonPromises.length <= 0) setMessage("Não há Pokémons favoritos!");
 
         let filtered = allPokemons;
         if (selectedTypes.length > 0) {
@@ -61,37 +62,35 @@ function Favorites() {
   
     loadPokemons();
   }, [currentPage, selectedTypes, favoritePokemons, dropped]);
-  
-  
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
-  
+
     try {
       setLoading(true);
       setError('');
-  
-      const favoritePokemons: { name: string; id: number }[] = await apiGetFavorites();
+
+      const favoritePokemons: { name: string; id: number }[] = await services.apiGetFavorites();
       if (!favoritePokemons || favoritePokemons.length === 0) {
         setError('No favorite Pokémon found.');
         return;
       }
-  
+
       const pokemonNames: string[] = favoritePokemons.map((p) => p.name);
-  
+
       const filteredNames = pokemonNames.filter((name: string) =>
         name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  
+
       if (filteredNames.length === 0) {
         setError('Pokémon not found in favorites. Please try another name.');
         setFilteredPokemons([]);
         return;
       }
-  
-      const pokemonPromises = filteredNames.map((name: string) => getPokemon(name));
+
+      const pokemonPromises = filteredNames.map((name: string) => services.getPokemon(name));
       const pokemonData = await Promise.all(pokemonPromises);
-  
+
       setFilteredPokemons(pokemonData);
       setPokemonsLength(pokemonData.length);
     } catch (err) {
@@ -101,29 +100,45 @@ function Favorites() {
     }
   };
 
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        const favorites = await apiGetFavorites();
-        setFavoritePokemons(favorites);
-      } catch (error) {
-        console.error('Erro ao buscar favoritos:', error);
-      }
-    };
+  const handleDragStart = (index: number) => {
+    setDraggedItemIndex(index);
+  };
 
-    fetchFavorites();
-  }, []);
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+  };
 
-  const moveCard = (draggedId: number, hoveredId: number) => {
-    const hoveredIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === hoveredId);
-    apiPatchFavoritesOrder(hoveredIndex , draggedId)
-      .then((response) => {
-        console.log(`Pokémon com ID ${draggedId} movido para a ordem ${hoveredIndex}`);
-        setDropped(true);
-      })
-      .catch((error) => {
-        console.error('Erro ao atualizar a ordem no backend:', error);
-      });
+  const handleDrop = (index: number) => {
+    if (draggedItemIndex === null || hoveredItemIndex === null) return;
+
+    const reorderedPokemons = filteredPokemons.map((pokemon, idx) => ({
+        ...pokemon,
+        position: idx + 1,
+    }));
+
+    setFilteredPokemons(reorderedPokemons);
+
+    const draggedPokemon = reorderedPokemons[draggedItemIndex];
+    const newOrder = draggedPokemon.position; 
+    const pokemonID = draggedPokemon.id; 
+
+    services.apiPatchFavoritesOrder(newOrder, pokemonID)
+        .then(response => {
+            console.log('Ordem dos Pokémons atualizada com sucesso!', response);
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar a ordem no backend:', error);
+        });
+
+    setDraggedItemIndex(null);
+    setHoveredItemIndex(null);
+};
+
+  
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
   };
 
   return (
@@ -133,7 +148,6 @@ function Favorites() {
           <h1 className="text-4xl font-bold text-gray-800 mb-6">Favorite Pokémon</h1>
           <div className="flex flex-row justify-center items-center mb-8 mx-auto w-full max-w-5xl gap-4">
             <Filters onFilter={setSelectedTypes} />
-
             <div className="w-full max-w-md relative">
               <input
                 type="text"
@@ -161,25 +175,30 @@ function Favorites() {
           </div>
         ) : (
           <>
-            
-            {!message ?     
+            {!message ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPokemons.map((pokemon) => (    
-                  <PokemonCard
+                {filteredPokemons.map((pokemon, index) => (
+                  <div
                     key={pokemon.id}
-                    pokemon={pokemon}
-                    favoritePokemons={favoritePokemons}
-                    setFavoritePokemons={setFavoritePokemons}
-                    moveCard={moveCard}
-                  />
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(event) => handleDragOver(event, index)}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <PokemonCard
+                      pokemon={pokemon}
+                      favoritePokemons={favoritePokemons}
+                      setFavoritePokemons={setFavoritePokemons}
+                    />
+                  </div>
                 ))}
-              </div>: 
-              (
-                <div className="flex justify-center align-center">
-                  <h1>{message}</h1>  
-                </div>
-              )}
-            
+              </div>
+            ) : (
+              <div className="flex justify-center align-center">
+                <h1>{message}</h1>
+              </div>
+            )}
 
             <div className="flex justify-center mt-8 pb-8">
               <Stack spacing={2}>

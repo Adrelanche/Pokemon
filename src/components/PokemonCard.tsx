@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Heart, HeartOff } from 'lucide-react';
 import type { Pokemon } from '../types/pokemon';
-import { apiSetFavorites } from '../services/api';
+import services from '../services/Services';
 import { isLoggedIn } from '../Auth/Auth';
 import { useDrag, useDrop } from 'react-dnd';
 
@@ -42,7 +42,7 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokem
 
   const toggleFavorite = async () => {
     try {
-      await apiSetFavorites(pokemon.name, pokemon.id);
+      await services.apiSetFavorites(pokemon.name, pokemon.id);
       if (isFavorite) {
         setFavoritePokemons(favoritePokemons.filter(fav => fav.id !== pokemon.id));
       } else {
