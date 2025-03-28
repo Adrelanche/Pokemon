@@ -17,51 +17,73 @@ function Favorites() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [pokemonsLength, setPokemonsLength] = useState(0);
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
-  const [message, setMessage] = useState<any>('');
+  const [allPokemons, setAllPokemons] = useState<Pokemon[]>([]);
+  const [message, setMessage] = useState<string | null>(null);
   const [dropped, setDropped] = useState<boolean>(false);
-  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-  const [hoveredItemIndex, setHoveredItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    const loadPokemons = async () => {
+    const loadFavorites = async () => {
       try {
         setLoading(true);
         setError('');
-  
-        const favoritePokemons = await services.apiGetFavorites();
-        if (favoritePokemons.error) {
-          setError(favoritePokemons.error);
+
+        const response = await services.apiGetFavorites();
+        if (response.error) {
+          setError(response.error);
           return;
         }
-  
-        const pokemonPromises = favoritePokemons.map((p: { name: string; id: number }) => services.getPokemon(p.name));
-        const allPokemons = await Promise.all(pokemonPromises);
-        
-        if (pokemonPromises.length <= 0) setMessage("Não há Pokémons favoritos!");
 
-        let filtered = allPokemons;
-        if (selectedTypes.length > 0) {
-          filtered = allPokemons.filter((pokemon) =>
-            pokemon.types.some((type: { type: { name: string } }) =>
-              selectedTypes.includes(type.type.name)
-            )
-          );
-        }
-  
-        const offset = currentPage * limit;
-        const paginatedPokemons = filtered.slice(offset, offset + limit);
-  
-        setPokemonsLength(filtered.length);
-        setFilteredPokemons(paginatedPokemons);
+        setFavoritePokemons(response);
       } catch (err) {
         setError('Failed to load Pokémon favorites.');
       } finally {
         setLoading(false);
       }
     };
-  
+
+    loadFavorites();
+  }, [dropped]);
+
+  useEffect(() => {
+    const loadPokemons = async () => {
+      if (favoritePokemons.length === 0) return;
+
+      try {
+        setLoading(true);
+        setError('');
+
+        const pokemonPromises = favoritePokemons.map((p) => services.getPokemon(p.name));
+        const allPokemons = await Promise.all(pokemonPromises);
+
+        setAllPokemons(allPokemons);
+      } catch (err) {
+        setError('Failed to load Pokémon details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadPokemons();
-  }, [currentPage, selectedTypes, favoritePokemons, dropped]);
+  }, [favoritePokemons]);
+
+  useEffect(() => {
+    if (allPokemons.length > 0) {
+      let filtered = allPokemons;
+
+      if (selectedTypes.length > 0) {
+        filtered = allPokemons.filter((pokemon) =>
+          pokemon.types.some((type) => selectedTypes.includes(type.type.name))
+        );
+      }
+
+      const offset = currentPage * limit;
+      const paginatedPokemons = filtered.slice(offset, offset + limit);
+
+      setPokemonsLength(filtered.length);
+      setFilteredPokemons(paginatedPokemons);
+      setMessage(filtered.length === 0 ? 'Não há Pokémons favoritos!' : null);
+    }
+  }, [currentPage, selectedTypes, allPokemons]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -70,17 +92,9 @@ function Favorites() {
       setLoading(true);
       setError('');
 
-      const favoritePokemons: { name: string; id: number }[] = await services.apiGetFavorites();
-      if (!favoritePokemons || favoritePokemons.length === 0) {
-        setError('No favorite Pokémon found.');
-        return;
-      }
-
-      const pokemonNames: string[] = favoritePokemons.map((p) => p.name);
-
-      const filteredNames = pokemonNames.filter((name: string) =>
-        name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filteredNames = favoritePokemons
+        .map((p) => p.name)
+        .filter((name) => name.toLowerCase().includes(searchTerm.toLowerCase()));
 
       if (filteredNames.length === 0) {
         setError('Pokémon not found in favorites. Please try another name.');
@@ -88,8 +102,7 @@ function Favorites() {
         return;
       }
 
-      const pokemonPromises = filteredNames.map((name: string) => services.getPokemon(name));
-      const pokemonData = await Promise.all(pokemonPromises);
+      const pokemonData = await Promise.all(filteredNames.map((name) => services.getPokemon(name)));
 
       setFilteredPokemons(pokemonData);
       setPokemonsLength(pokemonData.length);
@@ -100,45 +113,33 @@ function Favorites() {
     }
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedItemIndex(index);
-  };
+  const moveCard = async (dragIndex: number, hoverIndex: number) => {
+    if (
+      dragIndex < 0 ||
+      hoverIndex < 0 ||
+      dragIndex >= favoritePokemons.length ||
+      hoverIndex >= favoritePokemons.length
+    ) {
+      console.error("Índices inválidos para reordenar favoritos.");
+      return;
+    }
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, index: number) => {
-    event.preventDefault();
-    if (draggedItemIndex === null || draggedItemIndex === index) return;
-  };
+    const pokemonToMove = favoritePokemons[dragIndex];
 
-  const handleDrop = (index: number) => {
-    if (draggedItemIndex === null || hoveredItemIndex === null) return;
+    setFavoritePokemons((prevFavorites) => {
+      const updatedFavorites = [...prevFavorites];
+      const [movedPokemon] = updatedFavorites.splice(dragIndex, 1);
+      updatedFavorites.splice(hoverIndex, 0, movedPokemon);
+      return updatedFavorites;
+    });
 
-    const reorderedPokemons = filteredPokemons.map((pokemon, idx) => ({
-        ...pokemon,
-        position: idx + 1,
-    }));
+    try {
+      await services.apiPatchFavoritesOrder(hoverIndex, pokemonToMove.id);
+    } catch (error) {
+      console.error("Erro ao atualizar ordem dos favoritos:", error);
+    }
 
-    setFilteredPokemons(reorderedPokemons);
-
-    const draggedPokemon = reorderedPokemons[draggedItemIndex];
-    const newOrder = draggedPokemon.position; 
-    const pokemonID = draggedPokemon.id; 
-
-    services.apiPatchFavoritesOrder(newOrder, pokemonID)
-        .then(response => {
-            console.log('Ordem dos Pokémons atualizada com sucesso!', response);
-        })
-        .catch(error => {
-            console.error('Erro ao atualizar a ordem no backend:', error);
-        });
-
-    setDraggedItemIndex(null);
-    setHoveredItemIndex(null);
-};
-
-  
-
-  const handleDragEnd = () => {
-    setDraggedItemIndex(null);
+    setDropped((prev) => !prev);
   };
 
   return (
@@ -178,20 +179,13 @@ function Favorites() {
             {!message ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredPokemons.map((pokemon, index) => (
-                  <div
+                  <PokemonCard
                     key={pokemon.id}
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(event) => handleDragOver(event, index)}
-                    onDrop={() => handleDrop(index)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <PokemonCard
-                      pokemon={pokemon}
-                      favoritePokemons={favoritePokemons}
-                      setFavoritePokemons={setFavoritePokemons}
-                    />
-                  </div>
+                    pokemon={pokemon}
+                    favoritePokemons={favoritePokemons}
+                    setFavoritePokemons={setFavoritePokemons}
+                    moveCard={moveCard}
+                  />
                 ))}
               </div>
             ) : (

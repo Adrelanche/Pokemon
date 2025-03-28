@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { backend } from '../services/api';
+import { PATHAPI } from "../services/PathApi";
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -27,7 +27,7 @@ const RegisterPage = () => {
     };
 
     try {
-      await axios.post(`${backend}/api/register/`, formData);
+      await axios.post(`${PATHAPI.baseBack}/api/register/`, formData);
       navigate('/login');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error during registration');
