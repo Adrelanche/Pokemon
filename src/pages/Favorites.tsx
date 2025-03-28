@@ -113,33 +113,28 @@ function Favorites() {
     }
   };
 
-  const moveCard = async (dragIndex: number, hoverIndex: number) => {
-    if (
-      dragIndex < 0 ||
-      hoverIndex < 0 ||
-      dragIndex >= favoritePokemons.length ||
-      hoverIndex >= favoritePokemons.length
-    ) {
-      console.error("Índices inválidos para reordenar favoritos.");
-      return;
+  const moveCard = async (draggedId: number, hoveredId: number) => {
+    const originalFavorites = [...filteredPokemons];
+  
+    const draggedIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === draggedId);
+    const hoveredIndex = filteredPokemons.findIndex((pokemon) => pokemon.id === hoveredId);
+  
+    if (draggedIndex === hoveredIndex) return;
+  
+    const updatedFavorites = [...filteredPokemons];
+    const draggedCard = updatedFavorites.splice(draggedIndex, 1)[0];
+    updatedFavorites.splice(hoveredIndex, 0, draggedCard);
+  
+    setFilteredPokemons(updatedFavorites);
+  
+    if (JSON.stringify(originalFavorites) !== JSON.stringify(updatedFavorites)) {
+      try {
+        await services.apiPatchFavoritesOrder(hoveredIndex + 1, draggedCard.id);
+        console.log("Ordem do Pokémon movido atualizada com sucesso!");
+      } catch (error) {
+        console.error('Erro ao atualizar a ordem do Pokémon no backend:', error);
+      }
     }
-
-    const pokemonToMove = favoritePokemons[dragIndex];
-
-    setFavoritePokemons((prevFavorites) => {
-      const updatedFavorites = [...prevFavorites];
-      const [movedPokemon] = updatedFavorites.splice(dragIndex, 1);
-      updatedFavorites.splice(hoverIndex, 0, movedPokemon);
-      return updatedFavorites;
-    });
-
-    try {
-      await services.apiPatchFavoritesOrder(hoverIndex, pokemonToMove.id);
-    } catch (error) {
-      console.error("Erro ao atualizar ordem dos favoritos:", error);
-    }
-
-    setDropped((prev) => !prev);
   };
 
   return (
@@ -180,12 +175,13 @@ function Favorites() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredPokemons.map((pokemon, index) => (
                   <PokemonCard
-                    key={pokemon.id}
-                    pokemon={pokemon}
-                    favoritePokemons={favoritePokemons}
-                    setFavoritePokemons={setFavoritePokemons}
-                    moveCard={moveCard}
-                  />
+                   key={pokemon.id}
+                   index={index}
+                   pokemon={pokemon}
+                   favoritePokemons={favoritePokemons}
+                   setFavoritePokemons={setFavoritePokemons}
+                   moveCard={moveCard}
+                 />
                 ))}
               </div>
             ) : (

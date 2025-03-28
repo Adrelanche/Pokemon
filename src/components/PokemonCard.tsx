@@ -7,6 +7,7 @@ import { useDrag, useDrop } from 'react-dnd';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
+  index: number;
   favoritePokemons: { name: string; id: number }[];
   setFavoritePokemons: React.Dispatch<React.SetStateAction<{ name: string; id: number }[]>>;
   moveCard?: (draggedId: number, hoveredId: number) => void;
@@ -33,7 +34,7 @@ const typeColors: Record<string, string> = {
   fairy: 'bg-pink-300',
 };
 
-export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokemons, setFavoritePokemons, moveCard }) => {
+export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, index, favoritePokemons, setFavoritePokemons, moveCard }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -53,7 +54,6 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokem
       console.error('Erro ao favoritar Pokémon:', error);
     }
   };
-
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: { id: pokemon.id },
@@ -64,7 +64,7 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, favoritePokem
 
   const [, drop] = useDrop({
     accept: 'CARD',
-    drop: (item: { id: number }) => {
+    hover: (item: { id: number }) => {
       if (moveCard) {
         moveCard(item.id, pokemon.id);
       }
