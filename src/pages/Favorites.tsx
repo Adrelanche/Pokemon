@@ -19,7 +19,6 @@ function Favorites() {
   const [favoritePokemons, setFavoritePokemons] = useState<{ name: string; id: number }[]>([]);
   const [allPokemons, setAllPokemons] = useState<Pokemon[]>([]);
   const [message, setMessage] = useState<string | null>(null);
-  const [dropped, setDropped] = useState<boolean>(false);
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -42,7 +41,7 @@ function Favorites() {
     };
 
     loadFavorites();
-  }, [dropped]);
+  }, []);
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -130,7 +129,6 @@ function Favorites() {
     if (JSON.stringify(originalFavorites) !== JSON.stringify(updatedFavorites)) {
       try {
         await services.apiPatchFavoritesOrder(hoveredIndex + 1, draggedCard.id);
-        console.log("Ordem do Pokémon movido atualizada com sucesso!");
       } catch (error) {
         console.error('Erro ao atualizar a ordem do Pokémon no backend:', error);
       }
