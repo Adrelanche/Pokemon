@@ -40,13 +40,13 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full sm:w-96">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Criar conta</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Create Account</h2>
 
         {error && <div className="text-red-500 text-center mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-semibold text-gray-700">Usuário</label>
+            <label htmlFor="username" className="block text-sm font-semibold text-gray-700">Username</label>
             <input
               type="text"
               id="username"
@@ -70,7 +70,7 @@ const RegisterPage = () => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Senha</label>
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Password</label>
             <input
               type="password"
               id="password"
@@ -83,7 +83,7 @@ const RegisterPage = () => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="first_name" className="block text-sm font-semibold text-gray-700">Nome</label>
+            <label htmlFor="first_name" className="block text-sm font-semibold text-gray-700">Name</label>
             <input
               type="text"
               id="first_name"
@@ -95,7 +95,7 @@ const RegisterPage = () => {
           </div>
 
           <div className="mb-6">
-            <label htmlFor="last_name" className="block text-sm font-semibold text-gray-700">Sobrenome</label>
+            <label htmlFor="last_name" className="block text-sm font-semibold text-gray-700">Last Name</label>
             <input
               type="text"
               id="last_name"
@@ -113,7 +113,7 @@ const RegisterPage = () => {
             }`}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Registrando...' : 'Registrar'}
+            {isSubmitting ? 'Registering...' : 'Register'}
           </button>
         </form>
       </div>

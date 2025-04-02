@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-blue-900">
-      <div className="flex items-center justify-between container mx-auto px-4 space-x-4">
+      <div className="flex items-start justify-between container mx-auto px-4 space-x-4">
         <div className="flex items-center justify-center h-16">
           <div
             className="flex items-center cursor-pointer group hover:scale-105 transition-transform"
@@ -47,18 +47,18 @@ const Navbar: React.FC = () => {
           </div>
         </div>
         {!isLoggedIn() ? (
-          <div className="flex justify-center mt-4 gap-4">
+          <div className="flex mt-4 gap-4">
             <button
               className=" text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
               onClick={() => navigate("/login")}
             >
-              Entrar
+              Login
             </button>
             <button
               className=" text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
               onClick={() => navigate("/register")}
             >
-              Registrar
+              Register
             </button>
           </div>
         ): 
@@ -84,8 +84,8 @@ const Navbar: React.FC = () => {
                 'aria-labelledby': 'basic-button',
               }}
             >
-              <MenuItem onClick={handleFav}>Favoritos</MenuItem>
-              <MenuItem onClick={handleLogout}>Sair</MenuItem>
+              <MenuItem onClick={handleFav}>Favorites</MenuItem>
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </Menu>
           </div>
         )}
